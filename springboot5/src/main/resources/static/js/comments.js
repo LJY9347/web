@@ -83,6 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
             .then((response) => {
                 console.log(response);
                 currentPageNo = response.data.number;
+                
+                // 현재 페이지 번호보다 페이지 개수가 더 많으면 댓글 [더보기] 버튼을 보여줌.
+                const divBtnMore = document.querySelector('div#divBtnMore');
+                if (currentPageNo + 1 < response.data.totalPages) {
+                    divBtnMore.classList.remove('d-none');
+                } else {
+                    divBtnMore.classList.add('d-none');
+                }
+                
                 makeCommentElements(response.data.content, response.data.number);
             })
             .catch((error) => console.log(error));
@@ -103,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="mt-2">
                     <div class="mt-2">
-                        <textarea class="form-control">${comment.ctext}</textarea>
+                        <textarea class="commentText form-control" data-id="${comment.id}">${comment.ctext}</textarea>
                     </div>
                     <div class="mt-2">
                         <button class="btnDelete btn btn-outline-danger btn-sm" data-id="${comment.id}">삭제</button>
@@ -129,11 +138,57 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', deleteComment);
         });
         
+        const btnUpdates = document.querySelectorAll('button.btnUpdate');
+        btnUpdates.forEach((btn) => {
+            btn.addEventListener('click', updateComment);
+        });
+        
     }
     
     function deleteComment(event) {
-        console.log(event);
-        console.log(event.target);
+//        console.log(event);
+//        console.log(event.target);
+        if (!confirm('정말 삭제할까요?')) {
+            return;
+        }
+        
+        const id = event.target.getAttribute('data-id'); // 삭제할 댓글 아이디
+        const uri = `/api/comment/${id}`; // 삭제 Ajax 요청을 보낼 주소
+        axios.delete(uri)
+            .then((response) => {
+                console.log(response);
+                alert(`댓글 #${id} 삭제 성공`);
+                getAllComments(0); // 댓글 목록 갱신
+            })
+            .catch((error) => console.log(error));
+    }
+
+    function updateComment(event) {
+//        console.log(event.target);
+        const id = event.target.getAttribute('data-id'); // 업데이트할 댓글 아이디
+        
+        const textarea = document.querySelector(`textarea.commentText[data-id="${id}"]`);
+//        console.log(textarea);
+
+        const ctext = textarea.value; // 업데이트할 댓글 내용
+        if (ctext.trim() === '') {
+            alert('댓글 내용은 반드시 입력해야 합니다.');
+            return;
+        }
+        
+        if (!confirm('변경된 댓글을 저장할까요?')) {
+            return;
+        }
+        
+        const uri = `/api/comment/${id}`; // Ajax 요청을 보낼 주소
+        const data = { id, ctext }; // 업데이트 요청 데이터. {id: id, ctext: ctext}
+        axios.put(uri, data)
+            .then((response) => {
+                console.log(response);
+                alert(`댓글 #${id} 업데이트 성공!`);
+                getAllComments(0); // 댓글 목록 갱신
+            })
+            .catch((error) => console.log(error));
     }
 
 });
