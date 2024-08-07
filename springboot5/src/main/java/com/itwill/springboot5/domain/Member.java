@@ -1,10 +1,17 @@
 package com.itwill.springboot5.domain;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.hibernate.annotations.NaturalId;
 
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -45,7 +52,30 @@ public class Member extends BaseTimeEntity {
 	@Basic(optional = false)
 	private String email;
 	
+	@Builder.Default // Builder 패턴에서도 null이 아닌 HashSet<> 객체로 초기화될 수 있도록. (기본값을 넣어줌)
+	@ToString.Exclude // toString() 메서드에서 제외.
+	@ElementCollection(fetch = FetchType.LAZY) // 연관 테이블(member_roles) 사용.
+	@Enumerated(EnumType.STRING) // DB 테이블에 저장될 때 상수 이름(문자열)을 사용.
+	private Set<MemberRole> roles = new HashSet<>(); // 한명의 멤버가 2개 이상의 롤을 가질 수 있기 때문에.
+	// list 는 중복된 값(유저, 유저, 유저)이 저장될 수 있기 때문에.
+	
+	public Member addRole(MemberRole role) {
+		roles.add(role); // Set<>에 원소를 추가.
+		return this;
+	}
+	
+	public Member removeRole(MemberRole role) {
+		roles.remove(role); // Set<>에서 원소(role)를 삭제.
+		return this;
+	}
+	
+	public Member clearRoles() {
+		roles.clear(); // Set<>의 모든 원소를 지움.
+		return this;
+	}
+	
 }
+
 
 
 
